@@ -4,6 +4,7 @@ import com.test.workforcemgmt.dto.CreateTaskRequest;
 import com.test.workforcemgmt.dto.TaskDto;
 import com.test.workforcemgmt.enums.Priority;
 import com.test.workforcemgmt.enums.Status;
+import com.test.workforcemgmt.mapper.TaskMapper;
 import com.test.workforcemgmt.model.Task;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +16,13 @@ import java.util.stream.Collectors;
 @Service
 public class TaskService {
 
+    private final TaskMapper taskMapper;
     private final Map<Long, Task> taskMap = new HashMap<>();
     private final AtomicLong taskIdCounter = new AtomicLong(1);
+
+    public TaskService(TaskMapper taskMapper) {
+        this.taskMapper = taskMapper;
+    }
 
     public TaskDto createTask(CreateTaskRequest request) {
         Task task = new Task();
@@ -28,7 +34,7 @@ public class TaskService {
         task.setAssignedStaffId(request.getStaffId());
         task.getActivityLogs().add("Task created");
         taskMap.put(task.getId(), task);
-        return toDto(task);
+        return taskMapper.toDto(task);
     }
 
     public void reassignTask(Long taskId, Long newStaffId) {
@@ -55,7 +61,7 @@ public class TaskService {
                 .filter(task -> task.getStatus() != Status.CANCELLED)
                 .filter(task -> (task.getStartDate().isAfter(start.minusDays(1)) && task.getStartDate().isBefore(end.plusDays(1)))
                         || (task.getStartDate().isBefore(start) && task.getStatus() == Status.ACTIVE))
-                .map(this::toDto)
+                .map(taskMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -68,7 +74,7 @@ public class TaskService {
     public List<TaskDto> getTasksByPriority(Priority priority) {
         return taskMap.values().stream()
                 .filter(task -> task.getPriority() == priority && task.getStatus() != Status.CANCELLED)
-                .map(this::toDto)
+                .map(taskMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -80,10 +86,10 @@ public class TaskService {
 
     public TaskDto getTaskById(Long id) {
         Task task = taskMap.get(id);
-        return toDto(task);
+        return taskMapper.toDto(taskMap.get(id));
     }
 
-    private TaskDto toDto(Task task) {
+    /*private TaskDto toDto(Task task) {
         TaskDto dto = new TaskDto();
         dto.setId(task.getId());
         dto.setTitle(task.getTitle());
@@ -95,5 +101,5 @@ public class TaskService {
         dto.setComments(task.getComments());
         dto.setActivityLogs(task.getActivityLogs());
         return dto;
-    }
+    }*/
 }
